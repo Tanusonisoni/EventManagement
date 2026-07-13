@@ -1,17 +1,25 @@
-// import { Router } from 'express';
-// const router = Router();
+import { Router } from 'express';
+const router = Router();
+import { deleteUser, getAllUsers, registerUser, updateUser } from '../controllers/userCantroller.js';
 
-// // get all users
-// // router.post("/", registerUser);
+// get all users
+ router.post("/", registerUser);
 
-// // router.get("/", authMiddleware, allowRoles("admin"), getAllUsers);
+ router.get("/",getAllUsers);
 
-// // router.patch("/", authMiddleware,allowRoles("admin","user"), updateUser);
+ router.patch("/",updateUser);
 
-// // router.delete("/", authMiddleware,allowRoles("user"), deleteUser);
+ router.delete("/",deleteUser);
 
-// // router.patch("/change-password", authMiddleware,allowRoles("user","admin"), changePassword);
+
+// router.get("/", authMiddleware, allowRoles("admin"), getAllUsers);
+
+// router.patch("/", authMiddleware,allowRoles("admin","user"), updateUser);
+
+// router.delete("/", authMiddleware,allowRoles("user"), deleteUser);
+
+// router.patch("/change-password", authMiddleware,allowRoles("user","admin"), changePassword);
 
 // // router.patch("/upload-image", authMiddleware,allowRoles("user","admin"),userUpload.single("image"), uploadImage);
 
-// export default router;
+ export default router;
