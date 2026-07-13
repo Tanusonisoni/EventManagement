@@ -1,53 +1,63 @@
-import { Router } from 'express';
-import authMiddleware from '../middlewares/authMiddleware.js';
-import allowRoles from '../middlewares/allowRoles.js';
-import { eventUpload } from '../config/multer.js';
-import {
-    deleteEvent,
-    getAllEvents,
-    registerEvent,
-    updateEvent,
-    cancelEvent,
-    eventThumbnailUpload,
-    eventImagesUpload,
-    myEvents,
-    searchEvents,
-    filterEvents
-} from '../controllers/eventController.js';
+#!/usr/bin/env node
 
-const router = Router();
+import http from "http";
+import debugLib from "debug";
+import app from "../app.js";
+import connectDb from "../config/db.js";
 
-// get all events public
-router.get("/", getAllEvents);
+const debug = debugLib("eventmanagemant:server");
 
-// search events public
-router.get("/search",searchEvents);
+const port = normalizePort(process.env.PORT || "3000");
+app.set("port", port);
 
-// filter events public
-router.get("/filter",filterEvents);
+const server = http.createServer(app);
 
-// admin routes
-router.use("/admin", authMiddleware, allowRoles("admin"));
+// Connect Database
+await connectDb();
 
-// add event by admin
-router.get("/admin", myEvents);
+server.listen(port);
+server.on("error", onError);
+server.on("listening", onListening);
 
-// add event by admin
-router.post("/admin", registerEvent);
+function normalizePort(val) {
+  const port = parseInt(val, 10);
 
-// update event by admin
-router.patch("/admin/:EventId", updateEvent);
+  if (isNaN(port)) {
+    return val;
+  }
 
-// delete event by admin
-router.delete("/admin/:EventId", deleteEvent);
+  if (port >= 0) {
+    return port;
+  }
 
-// cancel event by admin
-router.patch("/admin/cancel/:EventId", cancelEvent);
+  return false;
+}
 
-// upload event thumbnail by admin
-router.patch("/admin/upload_thumbnail/:EventId", eventUpload.single("thumbnail"), eventThumbnailUpload);
+function onError(error) {
+  if (error.syscall !== "listen") {
+    throw error;
+  }
 
-// upload event images by admin
-router.patch("/admin/upload_images/:EventId", eventUpload.array("images", 5), eventImagesUpload);
+  const bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
 
-export default router;
+  switch (error.code) {
+    case "EACCES":
+      console.error(bind + " requires elevated privileges");
+      process.exit(1);
+      break;
+
+    case "EADDRINUSE":
+      console.error(bind + " is already in use");
+      process.exit(1);
+      break;
+
+    default:
+      throw error;
+  }
+}
+
+function onListening() {
+  const addr = server.address();
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+  debug("Listening on " + bind);
+}
