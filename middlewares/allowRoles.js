@@ -1,4 +1,4 @@
-import {ApiResponse} from "../utils/resPattern";
+import {ApiResponse} from "../utils/resPattern.js";
 
 export default function allowRoles(...roles){
     return function (req,res,next){
