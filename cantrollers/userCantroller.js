@@ -1,11 +1,15 @@
 import userModel from "../models/user.js";
 import { ApiResponse } from "../utils/resPattern.js";
-// import {genreateHash,verifyHash} from "../config/brcypt.js";
+import { generatHash, verifyHash } from "../config/bcrypt.js";
 
-export async function registerUser(req, res) {
+
+export async function registerUser(req, res,next) {
     try {
-        const { email, name, password } = req.body;
-        // let hash=await genreateHash(password);
+        const { email,name, password } = req.body;
+        // let hash=await genrateHash(password);
+
+        let hash = await generatHash(password);
+
         let user = await userModel.create({ email, name, password });
         res.status(201).json
             (new ApiResponse(true, user, "success"));
@@ -28,6 +32,7 @@ export async function getAllUsers(req,res,next){
 
         res.status(200).json(new ApiResponse(true,users,"success"))
     }
+
     catch(error)
     {
         res.status(500).json(new ApiResponse(false,null,error.message || "internal server error"));
@@ -39,13 +44,14 @@ export async function updateUser(req,res,next){
         if(!name || !email || !phone || !gender || !address){
             return res.status(400).json(new ApiResponse(false , null ,"all fiels are required !"))
         }
-        let userstatus=await userModel.findByIdAndUpdate(req.user._id,(name,email,phone,gender,address),{returnDocument:"after"});
-        if(!user) return res.status(404).json(new ApiResponse(false,null,"user not found"))
+        let userstatus=await userModel.findByIdAndUpdate(req.user._id,{name,email,phone,gender,address},{returnDocument:"after"});
 
-        res.status(200).json(new ApiResponse(true , null,"Update successfull"))
+        if(!userstatus) return res.status(404).json(new ApiResponse(false,null,"user not found"))
+
+        res.status(200).json(new ApiResponse(true , userstatus,"Update successfull"))
     }catch(error)
     {
-        res.status(500).json(new ApiResponse(false , null,"internal server error"))
+        res.status(500).json(new ApiResponse(false , error,"internal server error"))
     }
 }
 

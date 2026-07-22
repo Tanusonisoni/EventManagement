@@ -1,26 +1,30 @@
 import { Router } from 'express';
-const router = Router();
 import authMiddleware from "../middlewares/authMiddleware.js"
 import { deleteUser, getAllUsers, registerUser, updateUser ,changePassword} from '../cantrollers/userCantroller.js';
 import allowRoles from '../middlewares/allowRoles.js';
 
 // get all users
- router.post("/", registerUser);
 
-//  router.get("/",getAllUsers);
+// const router=Router();
 
-//  router.patch("/",updateUser);
+const router = Router();
 
-//  router.delete("/",deleteUser);
+ router.post("/register", registerUser);
+
+ router.get("/",getAllUsers);
+
+ router.patch("/",authMiddleware,updateUser);
+
+ router.delete("/",deleteUser);
 
 
-router.get("/", authMiddleware, allowRoles("admin"), getAllUsers);
+// router.get("/", authMiddleware, allowRoles("admin"), getAllUsers);
 
-router.patch("/", authMiddleware,allowRoles("admin","user"), updateUser);
+// router.patch("/", authMiddleware,allowRoles("admin","user"), updateUser);
 
-router.delete("/", authMiddleware,allowRoles("user"), deleteUser);
+// router.delete("/", authMiddleware,allowRoles("user"), deleteUser);
 
- router.patch("/change-password", authMiddleware,allowRoles("user","admin"), changePassword);
+// router.patch("/change-password", authMiddleware,allowRoles("user","admin"), changePassword);
 
 // // router.patch("/upload-image", authMiddleware,allowRoles("user","admin"),userUpload.single("image"), uploadImage);
 

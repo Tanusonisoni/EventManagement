@@ -3,7 +3,10 @@
 import http from "http";
 import debugLib from "debug";
 import app from "../app.js";
+import dotenv from 'dotenv';
 import connectDb from "../config/db.js";
+
+dotenv.config();
 
 const debug = debugLib("eventmanagemant:server");
 

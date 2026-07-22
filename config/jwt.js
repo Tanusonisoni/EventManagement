@@ -3,7 +3,7 @@ import {config} from  "dotenv"
 
 config();
 
-export function genreatetoken(data){
+export function genreateToken(data){
     try{
         let token=jwt.sign(data,process.env.TOKEN_SECRET,{expiresIn:"id"});
         return token;

@@ -17,7 +17,8 @@ export async function authCantroller(req,res,next) {
         if(!user) return res.status(404).json(new ApiResponse(false,null,"user not found"));
 
         user =user.toObject();
-        let match=await verifyHash(password,user,password);
+
+        let match=await verifyHash(password,user.password);
 
         if(!match) return  res.status(401).json(new ApiResponse(false,null,"incprrect password"));
 
@@ -34,7 +35,7 @@ export async function authCantroller(req,res,next) {
         res.status(200).json(new ApiResponse(true,user,"success"));
     }catch(error)
     {
-        res.status(500).json(new ApiResponse(false,null,"inernal server error"));
+        res.status(500).json(new ApiResponse(false,null, error.message || "inernal server error"));
     }
     
 }
