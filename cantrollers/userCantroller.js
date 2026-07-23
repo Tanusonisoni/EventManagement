@@ -10,7 +10,7 @@ export async function registerUser(req, res,next) {
 
         let hash = await generatHash(password);
 
-        let user = await userModel.create({ email, name, password });
+        let user = await userModel.create({ email, name, password :hash});
         res.status(201).json
             (new ApiResponse(true, user, "success"));
     }
@@ -77,7 +77,7 @@ export async function changePassword(req,res,next){
         return res.status(400).json(new ApiResponse(false,null,"All fields are required!"));
 
     }
-    let user = await userModel.findOne({id:req.user._id,isDeleted:false});
+    let user = await userModel.findOne({_id:req.user._id,isDeleted:false});
     if(!user){
         return res.status(404).json(new ApiResponse(false,null,"user not found"));
     }
@@ -86,7 +86,7 @@ export async function changePassword(req,res,next){
         return res.status(401).json(new ApiResponse(false,null,"Incorrect Passowrd"));
     }
 
-   let hash=await generateHash(newPassword);
+   let hash=await generatHash(newPassword);
    let updateUser =await userModel.findByIdAndUpdate(req.user._id,{password:hash},{returnDocument:"after"});
     res.status(200).json(new ApiResponse(true,user,"Password Updated Successfull"));
 
@@ -95,4 +95,23 @@ export async function changePassword(req,res,next){
     res.status(500).json(new ApiResponse(false,null,error.message || "Imternal Server error"));
   }
 
+}
+
+export async function uploadImage(req,res,next) {
+    try{
+        const imageFile=req.file;
+        if(!imageFile)
+        {
+            return res.status(400).json(new ApiResponse(false,null,"image is required"));
+
+        }
+        const imgUrl=`${req.protocol}://${req.host}/${imageFile.destination}/${imageFile.filename}`
+        let user=await userModel.findByIdAndUpdate(req.user._id,{image:imgUrl},{returnDocument:"after"});
+
+        res.status(200).json(new ApiResponse(true,user,"upload success"))
+
+    }catch(error)
+    {
+        res.status(500).json(new ApiResponse(false,null,error.message || "internal server error"));
+    }
 }

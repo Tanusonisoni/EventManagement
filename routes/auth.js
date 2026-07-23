@@ -6,6 +6,6 @@ const router = express.Router();
 
 //login request
 // router.post("/register",registerUser)
-router.post("/",authCantroller);
+router.post("/login",authCantroller);
 
 export default router;

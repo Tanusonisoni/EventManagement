@@ -1,11 +1,11 @@
-import jwt from "Jsonwebtoken"
+import jwt from "jsonwebtoken"
 import {config} from  "dotenv"
 
 config();
 
 export function genreateToken(data){
     try{
-        let token=jwt.sign(data,process.env.TOKEN_SECRET,{expiresIn:"id"});
+        let token=jwt.sign(data,process.env.TOKEN_SECRET,{expiresIn:"1d"});
         return token;
     }catch(error){
         console.log(error);

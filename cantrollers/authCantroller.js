@@ -32,6 +32,8 @@ export async function authCantroller(req,res,next) {
         delete user._v
         delete user.password
 
+        user.accessToken=accessToken;
+
         res.status(200).json(new ApiResponse(true,user,"success"));
     }catch(error)
     {
