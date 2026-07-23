@@ -6,7 +6,7 @@ import  {ApiResponse} from "../utils/resPattern.js";
 export default async function authMiddleware(req,res,next) {
     try{
 
-        console.log("AUTH HEADER:", req.headers.authorization);
+        // console.log("AUTH HEADER:", req.headers.authorization);
         // console.log(token);
         const token=req.headers.authorization?.split(" ")[1];
 

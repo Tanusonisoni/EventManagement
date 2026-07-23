@@ -3,6 +3,7 @@ import connectDb from "./config/db.js";
 import authRouter from "./routes/auth.js"
 import userRoute from "./routes/users.js"
 import indexRoute from "./routes/index.js"
+import eventsRouter from "./routes/event.js"
 const app = express();
 
 app.use(express.json());
@@ -19,5 +20,6 @@ app.use(express.json());
 app.use('/',indexRoute);
 app.use('/users',userRoute);
 app.use('/auth',authRouter);
+app.use('/event',eventsRouter)
 
 export default app;
