@@ -1,3 +1,5 @@
+
+
 export const bookingConfirmationTemplate = ({
     name,
     eventName,
@@ -6,7 +8,7 @@ export const bookingConfirmationTemplate = ({
     time,
     venue,
     amount,
-    download_url
+    download_url,
 }) => {
     return `
 <!DOCTYPE html>
@@ -135,7 +137,7 @@ Please show this booking code during check-in.
 <tr>
 <td align="center" style="padding-bottom:35px;">
 
-<a href=${download_url}
+<a href="${download_url}"
 style="
 background:#4F46E5;
 color:#ffffff;

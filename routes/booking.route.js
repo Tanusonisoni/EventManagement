@@ -1,8 +1,12 @@
 import { Router } from "express";
-import authMiddleware from "../middlewares/authMiddleware";
-import allowRoles from "../middlewares/allowRoles";
-import { eventUpload } from "../config/multer";
-import { bookTicket, cancelBooking, downloadTicket, filterBooking, getAllBooking, myBooking, myBookings, searchBooking } from "../cantrollers/bookingcantroller";
+import authMiddleware from "../middlewares/authMiddleware.js";
+import allowRoles from "../middlewares/allowRoles.js";
+import { eventUpload } from "../config/multer.js";
+import { bookTicket, cancelBooking, downloadTicket, 
+    filterBooking, 
+    getAllBooking,
+    myBookings, searchBooking }
+      from "../cantrollers/bookingcantroller.js";
 
 const router=Router();
 
@@ -21,6 +25,7 @@ router.get("/admin/filter",filterBooking);
 router.use("/user",allowRoles("user"));
 
 router.get("/user",myBookings);
+
 router.post("/user",bookTicket);
 
 router.patch("/user/booking-cancel",cancelBooking)

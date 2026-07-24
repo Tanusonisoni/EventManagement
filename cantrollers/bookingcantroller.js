@@ -1,60 +1,89 @@
-import { isValidObjectId,objectId } from "mongoose";
-import bookingModel from "../models/booking.model";
-import eventModel from "../models/event.model";
-import { ApiResponse } from "../utils/resPattern";
-import { genreateToken } from "../config/jwt";
-import { bookingCancellationTemplate } from "../template/bookingCancel";
-import { bookingConfirmationTemplate } from "../template/bookingConfirm";
+import { isValidObjectId,Types } from "mongoose";
+import bookingModel from "../models/booking.model.js";
+import eventModel from "../models/event.model.js";
+import { ApiResponse } from "../utils/resPattern.js";
+import { genreateToken } from "../config/jwt.js";
+import { bookingCancellationTemplate } from "../template/bookingCancel.js";
+import { bookingConfirmationTemplate } from "../template/bookingConfirm.js";
 import fs from "fs";
+import { transporter } from "../config/mailTransporter.js";
+import genreateTicketPDF from "../utils/ticketPdf.js";
 
-export async function bookTicket(req,res,next) {
-    try{
-        const {eventId,category}=req.body;
+export async function bookTicket(req, res, next) {
+    try {
+        const { eventId, category } = req.body;
 
-        let vip_tickets=parseInt(req.body.vip_tickets) || 0;
-        let general_tickets=parseInt(req.body.general_tickets) || 0;
+        let vip_tickets = parseInt(req.body.vip_tickets) || 0;
+        let general_tickets = parseInt(req.body.general_tickets) || 0;
 
-        if(!eventId || !(vip_tickets || general_tickets) || !category)
-        {
-            return res.status(400).json(new ApiResponse(false,null,"All fields are required"));
-
+        if (!eventId || !(vip_tickets || general_tickets) || !category) {
+            return res.status(400).json(new ApiResponse(false, null, "All fields are required"));
         }
 
-        let event=await eventModel.findOne({_id:eventId,isCancelled:false,isUpcoming:true,isCompleted:false});
+        let event = await eventModel.findOne({ _id: eventId, isCancelled: false, isUpcoming: true, isCompleted: false });
 
-        if(!event){
-            return res.status(404).json(new ApiResponse(false , null , "event not found or not available for booking"))
-        }
-        if(!(event.total_general_tickets-event.general_tickets_sold >= general_tickets)){
-            return res.status(400).json(new ApiResponse(false,null,"not"))
-        }
-        let alreadyBooked=await bookingModel.find({eventId,userId:req.user._id,isCancelled:false});
-
-        let totalTicketBooking=alreadyBoooked.reduce((acc,booking)=>{
-            return acc+booking.booked_tickets.vip_tickets + booked_tickets.general_tickets;
-
-        },0);
-        if((totalTicketBooked + vip_ticket + genaral_tickets)>5){
-            return res.satatus(400).json(new ApiResponse(false,null,"you have alreday book maximum number of ticket for this event"));
+        if (!event) {
+            return res.status(404).json(new ApiResponse(false, null, "event not found or not available for booking"));
         }
 
-        let ticket=await bookingModel.create({
-            amount:(vip_tickets * event.vip_ticket_price)+(genaral_tickets*event.general_ticket_price),eventId,
-            booked_tickets:{vip_tickets,genaral_tickets},
+        if (!(event.total_vip_tickets - event.vip_tickets_sold >= vip_tickets)) {
+            return res.status(400).json(new ApiResponse(false, null, "Not enough VIP tickets available"));
+        }
+
+        if (!(event.total_general_tickets - event.general_tickets_sold >= general_tickets)) {
+            return res.status(400).json(new ApiResponse(false, null, "Not enough general tickets available"));
+        }
+
+        let alreadyBooked = await bookingModel.find({ eventId, userId: req.user._id, isCancelled: false });
+
+        let totalTicketsBooked = alreadyBooked.reduce((acc, booking) => {
+            return acc + booking.booked_tickets.vip_tickets + booking.booked_tickets.general_tickets;
+        }, 0);
+
+        if ((totalTicketsBooked + vip_tickets + general_tickets) > 5) {
+            return res.status(400).json(new ApiResponse(false, null, "You have exceeded the maximum number of tickets allowed for this event"));
+        }
+
+        let ticket = await bookingModel.create({
+            amount: (vip_tickets * event.vip_ticket_price) + (general_tickets * event.general_ticket_price),
+            eventId,
+            booked_tickets: { vip_tickets, general_tickets },
             category,
-            userId:req.user._id
+            userId: req.user._id
         });
 
-        event.vip_tickets_sold+=vip_tickets;
-        event.general_ticket_sold+=general_tickets;
+        event.vip_tickets_sold += vip_tickets;
+        event.general_tickets_sold += general_tickets;
 
         await event.save();
 
-    }catch(error)
-    {
-        res.status(500).json(new ApiResponse(false,null,error.message || "inernal sever error"));
+         await transporter.sendMail({
+            from: `Event Management <${process.env.EMAIL}>`,
+            to: req.user.email,
+            subject: "Booking Confirmation",
+            html: bookingConfirmationTemplate({
+                name: req.user.name,
+                eventName: event.title,
+                bookingId: ticket._id,
+                date: event.date,
+                time: event.time,
+                venue: event.location,
+                amount: ticket.amount,
+                download_url : `${req.protocol}://${req.host}/bookings/${ticket._id}/download-ticket`
+            })
+        });
+
+        const io = req.app.get("io");
+
+        io.to(`event_${eventId}`).emit("newBooking", { ticket, room: `event_${eventId}`, message: "A new booking has been made for this event!" });
+
+        res.status(201).json(new ApiResponse(true, ticket, "booking created success"));
+
+    } catch (error) {
+        res.status(500).json(new ApiResponse(false, null, error.message || "Internal server Error"))
     }
 }
+
 
 export async function cancelBooking(req,res,next) {
     try{
@@ -81,6 +110,7 @@ export async function cancelBooking(req,res,next) {
           return res.status(400).json(new ApiResponse(false, null, "Cannot cancel booking for past events"));
         }
         booking.isCancelled=true;
+
         await booking.save();
 
         await eventModel.findByIdAndUpdate(booking.eventId._id, {
@@ -125,7 +155,7 @@ export async function getAllBooking(req,res,next) {
     }
 }
 
-export async function myBookings(res,req,next) {
+export async function myBookings(req,res,next) {
     try{
         let page=req.query.page>0 ? req.query.page:1;
         let limit = req.query.limit <= 100 ? req.query.limit:25
@@ -139,7 +169,7 @@ export async function myBookings(res,req,next) {
 
         let totalBooking=await bookingModel.countDocuments({userId:req.user._id});
 
-        res.staus(200).json(new ApiResponse(true,{page,limit,bookings,totalBooking},"success"));
+        res.status(200).json(new ApiResponse(true,{page,limit,booking,totalBooking},"success"));
     }catch(error)
     {
         res.status(500).json(new ApiResponse(false,null, error.message || "internal server error"))
@@ -197,7 +227,7 @@ export async function filterBooking(req,res,next) {
        .populate("userId","name email role _id")
        .skip(skip)
        .limit(limit)
-       .sort(s{createdAt:-1});
+       .sort({createdAt:-1});
 
        res.status(200).json(new ApiResponse(true,bookings,"success"));
 
@@ -214,7 +244,7 @@ export async function downloadTicket(req,res,next) {
         let {bookingId}=req.params;
 
         let ticket=await bookingModel.findOne({_id: bookingId})
-        .populate("event","_id titile date time location")
+        .populate("eventId","_id title date time location")
         .populate("userId","name email role _id");
 
         if(!ticket)
