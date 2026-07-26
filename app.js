@@ -18,7 +18,7 @@ app.use(express.json());
 
 //view engine setup
 app.set('view engine','ejs');
-
+app.set("trust proxy",1);
 //test api
 // app.get("/test",(req,res)=>{
 //     res.status(200).json({ success: true,

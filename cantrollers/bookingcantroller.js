@@ -87,18 +87,21 @@ export async function bookTicket(req, res, next) {
 
 export async function cancelBooking(req,res,next) {
     try{
+         console.log("REQ.BODY:", req.body);
+        console.log("BOOKING ID:", req.body.bookingId);
+
         let bookingId=req.body.bookingId;
         if(!bookingId)
         {
             return res.status(400).json(new ApiResponse(false,null,"booking is not required"));
 
         }
-        let booking=await bookingModel.findOne({_id:boookingId,userId:req.user._id})
+        let booking=await bookingModel.findOne({_id:bookingId,userId:req.user._id})
         .populate("eventId","_id title date time location");
 
         if(!booking)
         {
-            return res.status(400).json(new ApiResponse("booking not found"));
+            return res.status(400).json(new ApiResponse(false,null ,"booking not found"));
         }
         if(booking.isCancelled){
             return res.status(400).json(new ApiResponse(false , null, "booking is already cancelled"));
@@ -106,12 +109,37 @@ export async function cancelBooking(req,res,next) {
         let eventDate=new Date(booking.eventId.date).getTime();
         let currentDate=new Date().getTime();
 
-        if(eventDate -(24*60*60*100)<currentDate){
+        if(eventDate -(24*60*60*1000)<currentDate){
           return res.status(400).json(new ApiResponse(false, null, "Cannot cancel booking for past events"));
         }
         booking.isCancelled=true;
 
         await booking.save();
+
+        const eventId = booking.eventId._id;
+
+
+        const io = req.app.get("io");
+
+        io.to(`event_${eventId}`).emit("cancelBooking", 
+    { booking, room: `event_${eventId}`, 
+    message: "A booking has been cancelled for this event!" });
+
+        await transporter.sendMail({
+            from: `Event Management <${process.env.EMAIL}>`,
+            to: req.user.email,
+            subject: "Booking Cancelled",
+            html: bookingCancellationTemplate({
+                name: req.user.name,
+                eventName: booking.eventId.title,
+                bookingId: booking._id,
+                eventDate: booking.eventId.date,
+                eventTime: booking.eventId.time,
+                location: booking.eventId.location,
+                refundAmount: booking.refund_amount,
+                refundStatus: "pending"
+            })
+        });
 
         await eventModel.findByIdAndUpdate(booking.eventId._id, {
             $inc: {
@@ -122,7 +150,7 @@ export async function cancelBooking(req,res,next) {
       res.status(200).json(new ApiResponse(true,booking,"booking cancelled successfully"));
     }catch(error)
     {
-        res.staus(500).json(new ApiResponse(false , null,error.message || "internal server error"));
+        res.status(500).json(new ApiResponse(false , null,error.message || "internal server error"));
     }
 }
 
