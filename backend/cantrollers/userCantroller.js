@@ -115,3 +115,17 @@ export async function uploadImage(req,res,next) {
         res.status(500).json(new ApiResponse(false,null,error.message || "internal server error"));
     }
 }
+
+export async function userProfile(req, res, next) {
+    try {
+
+        let user = await userModel.findById(req.user._id);
+
+        if (!user) return res.status(404).json(new ApiResponse(false, null, "user not found !"))
+
+        res.status(200).json(new ApiResponse(true, user, "user profile retrieved successfully"))
+
+    } catch (error) {
+        res.status(500).json(new ApiResponse(false, null, error.message || "Internal server Error"))
+    }
+}

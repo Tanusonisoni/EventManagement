@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authMiddleware from "../middlewares/authMiddleware.js"
-import { deleteUser, getAllUsers, registerUser, updateUser ,changePassword,uploadImage} from '../cantrollers/userCantroller.js';
+import { deleteUser, getAllUsers, registerUser, updateUser ,changePassword,uploadImage,userProfile} from '../cantrollers/userCantroller.js';
 import allowRoles from '../middlewares/allowRoles.js';
 import { userUpload } from '../config/multer.js';
 
@@ -10,7 +10,7 @@ import { userUpload } from '../config/multer.js';
 
 const router = Router();
 
- router.post("/register",registerUser);
+ router.post("/",registerUser);
 
  router.get("/",authMiddleware,allowRoles("admin"),getAllUsers);
 
@@ -20,13 +20,15 @@ const router = Router();
 
 router.patch("/change-password",authMiddleware,allowRoles("admin","user"),changePassword);
 
-// router.get("/", authMiddleware, allowRoles("admin"), getAllUsers);
+router.get("/", authMiddleware, allowRoles("admin"), getAllUsers);
 
-// router.patch("/", authMiddleware,allowRoles("admin","user"), updateUser);
+router.patch("/", authMiddleware,allowRoles("admin","user"), updateUser);
 
-// router.delete("/", authMiddleware,allowRoles("user"), deleteUser);
+router.delete("/", authMiddleware,allowRoles("user"), deleteUser);
 
-// router.patch("/change-password", authMiddleware,allowRoles("user","admin"), changePassword);
+router.get("/profile", authMiddleware, allowRoles("user","admin"), userProfile);
+
+router.patch("/change-password", authMiddleware,allowRoles("user","admin"), changePassword);
 
  router.patch("/upload-image", authMiddleware,allowRoles("user","admin"),userUpload.single("image"), uploadImage);
 

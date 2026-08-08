@@ -1,5 +1,6 @@
 import eventModel from "../models/event.model.js";
 import { ApiResponse } from "../utils/resPattern.js";
+import fs from "fs";
 
 
 export async function registerEvent(req, res, next) {
@@ -109,7 +110,7 @@ export async function getAllEvent(req,res,next) {
         let limit=req.query.limit <= 100 ? req.query.limit : 25
         let skip = page===1 ? 0 :(page-1)*limit;
 
-        let event=await eventModel.find()
+        let events = await eventModel.find()
         .populate("createdBy","name email role_id")
         .skip(skip)
         .limit(limit)
@@ -117,11 +118,26 @@ export async function getAllEvent(req,res,next) {
 
         let totalEvent=await eventModel.countDocuments();
 
-        res.status(200).json(new ApiResponse(true,{page,limit,totalEvent},"success"));
+        res.status(200).json(new ApiResponse(true,{page,limit,totalEvent,events},"success"));
 
     }catch(error)
     {
-        res.staus(500).json(new ApiResponse(false,null,error.message||"internal sever error"))
+        res.status(500).json(new ApiResponse(false,null,error.message||"internal sever error"))
+    }
+}
+
+export async function getEventById(req,res,next) {
+    try {
+        let event = await eventModel.findById(req.params.EventId)
+            .populate("createdBy","name email role_id");
+
+        if(!event) {
+            return res.status(404).json(new ApiResponse(false,null,"event not found"));
+        }
+
+        res.status(200).json(new ApiResponse(true,event,"success"));
+    } catch(error) {
+        res.status(500).json(new ApiResponse(false,null,error.message || "internal server error"));
     }
 }
 
